@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>酒店员工管理系统</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>酒店员工管理系统</h1>
+        </header>
+
+        <main class="main-content">
+            <!-- 员工管理区域 -->
+            <section class="member-management">
+                <div class="section-tabs">
+                    <button class="tab-btn active" data-tab="add">新增员工</button>
+                    <button class="tab-btn" data-tab="search">查询员工</button>
+                    <button class="tab-btn" data-tab="edit">编辑员工</button>
+                    <button class="tab-btn" data-tab="delete">删除员工</button>
+                </div>
+
+                <!-- 新增员工表单 -->
+                <div class="tab-content active" id="add-tab">
+                    <h2>新增员工</h2>
+                    <form id="add-member-form" class="member-form">
+                        <div class="form-group">
+                            <label for="member-id">员工ID:</label>
+                            <input type="text" id="member-id" name="memberId" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="member-name">姓名:</label>
+                            <input type="text" id="member-name" name="memberName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="member-points">薪资:</label>
+                            <input type="number" id="member-points" name="memberPoints" min="0" value="0" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">添加员工</button>
+                    </form>
+                </div>
+
+                <!-- 查询员工 -->
+                <div class="tab-content" id="search-tab">
+                    <h2>查询员工</h2>
+                    <form id="search-member-form" class="search-form">
+                        <div class="form-group">
+                            <label for="search-id">员工ID:</label>
+                            <input type="text" id="search-id" name="searchId" required>
+                        </div>
+                        <button type="submit" class="btn btn-secondary">查询员工</button>
+                    </form>
+                    <div id="search-result" class="search-result"></div>
+                </div>
+
+                <!-- 编辑员工 -->
+                <div class="tab-content" id="edit-tab">
+                    <h2>编辑员工薪资</h2>
+                    <form id="search-edit-form" class="search-form">
+                        <div class="form-group">
+                            <label for="edit-search-id">员工ID:</label>
+                            <input type="text" id="edit-search-id" name="editSearchId" required>
+                        </div>
+                        <button type="submit" class="btn btn-secondary">查找员工</button>
+                    </form>
+                    <div id="edit-result"></div>
+                </div>
+
+                <!-- 删除员工 -->
+                <div class="tab-content" id="delete-tab">
+                    <h2>删除员工</h2>
+                    <form id="search-delete-form" class="search-form">
+                        <div class="form-group">
+                            <label for="delete-search-id">员工ID:</label>
+                            <input type="text" id="delete-search-id" name="deleteSearchId" required>
+                        </div>
+                        <button type="submit" class="btn btn-secondary">查找员工</button>
+                    </form>
+                    <div id="delete-result"></div>
+                </div>
+            </section>
+
+            <!-- 员工列表区域 -->
+            <section class="member-list">
+                <h2>员工列表</h2>
+                <div class="list-controls">
+                    <button id="refresh-list" class="btn btn-secondary">刷新列表</button>
+                </div>
+                <div id="members-list" class="members-table-container">
+                    <table class="members-table">
+                        <thead>
+                            <tr>
+                                <th>员工ID</th>
+                                <th>姓名</th>
+                                <th>薪资</th>
+                                <th>创建时间</th>
+                            </tr>
+                        </thead>
+                        <tbody id="members-tbody">
+                            <!-- 动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+
+        <!-- 消息提示 -->
+        <div id="message" class="message"></div>
+    </div>
+
+    <!-- 加载提示 -->
+    <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+        <p>处理中...</p>
+    </div>
+
+    <!-- Supabase JavaScript SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- 自定义JavaScript -->
+    <script src="js/app.js"></script>
+</body>
+</html>

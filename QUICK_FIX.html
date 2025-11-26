@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>快速退出修复</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+            text-align: center;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+        }
+        .btn:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+        .btn-success {
+            background: #28a745;
+        }
+        .btn-success:hover {
+            background: #218838;
+        }
+        .step {
+            margin: 15px 0;
+            padding: 15px;
+            border-left: 4px solid #28a745;
+            background: #f8f9fa;
+        }
+        .step-success {
+            border-left-color: #28a745;
+            background: #e8f5e8;
+        }
+        .step-number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background: #007bff;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            margin-right: 10px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 快速退出修复</h1>
+        <p>按顺序执行以下步骤来解决无法退出登录的问题</p>
+
+        <div class="step">
+            <div class="step-number">1</div>
+            <div>
+                <button class="btn" onclick="step1()">1. 强制登出</button>
+            </div>
+        </div>
+
+        <div class="step" id="step2">
+            <div class="step-number">2</div>
+            <div>
+                <button class="btn" onclick="step2()">2. 清理会话</button>
+            </div>
+        </div>
+
+        <div class="step" id="step3">
+            <div class="step-number">3</div>
+            <div>
+                <button class="btn" onclick="step3()">3. 重载页面</button>
+            </div>
+        </div>
+
+        <div class="step" id="step4">
+            <div class="step-number">4</div>
+            <div>
+                <button class="btn" onclick="step4()">4. 打开登录页面</button>
+            </div>
+        </div>
+
+        <div id="status" class="status">等待操作...</div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://xlamtnjlxzulahvumafh.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsYW10bmpseHp1bGFodnVtYWZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5NjYzMTYsImV4cCI6MjA3OTU0MjMxNn0.CbHe3A7qQYbMseUVmPUD3FBzSOmCR7OgFDmAtJIkHkw';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentStep = 0;
+
+        function updateStatus(message, type = 'success') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+        }
+
+        function markStepComplete(stepNumber) {
+            const stepDiv = document.getElementById(`step${stepNumber}`);
+            if (stepDiv) {
+                stepDiv.className = 'step step-success';
+            }
+            currentStep = stepNumber;
+        }
+
+        async function step1() {
+            updateStatus('正在强制登出...', 'warning');
+            markStepComplete(1);
+
+            try {
+                const { error } = await supabase.auth.signOut();
+
+                if (error) {
+                    updateStatus(`登出失败: ${error.message}`, 'error');
+                } else {
+                    updateStatus('✅ 强制登出成功！', 'success');
+                    setTimeout(step2, 1000);
+                }
+            } catch (err) {
+                updateStatus(`登出异常: ${err.message}`, 'error');
+            }
+        }
+
+        async function step2() {
+            updateStatus('正在清理所有会话...', 'warning');
+
+            try {
+                // 清理当前会话
+                const { error: signOutError } = await supabase.auth.signOut();
+
+                // 清理所有可能的 Supabase 本地存储
+                if (typeof localStorage !== 'undefined') {
+                    Object.keys(localStorage).forEach(key => {
+                        if (key.includes('supabase') || key.includes('auth')) {
+                            localStorage.removeItem(key);
+                        }
+                    });
+                }
+
+                // 清理会话存储
+                if (typeof sessionStorage !== 'undefined') {
+                    sessionStorage.clear();
+                }
+
+                updateStatus('✅ 所有会话已清理！', 'success');
+                setTimeout(step3, 1000);
+            } catch (err) {
+                updateStatus(`清理失败: ${err.message}`, 'error');
+            }
+        }
+
+        async function step3() {
+            updateStatus('正在重载页面...', 'warning');
+
+            try {
+                // 尝试获取最新会话信息
+                const { data: { session }, error } = await supabase.auth.getSession();
+
+                if (session) {
+                    // 如果有会话，先登出
+                    await supabase.auth.signOut();
+                }
+
+                updateStatus('✅ 页面准备重载！', 'success');
+                setTimeout(step4, 1000);
+            } catch (err) {
+                updateStatus(`重载失败: ${err.message}`, 'error');
+            }
+        }
+
+        function step4() {
+            updateStatus('正在跳转到登录页面...', 'warning');
+
+            // 清理可能的缓存
+            if ('caches' in window) {
+                caches.keys().then(cacheNames => {
+                    return Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
+                });
+            }
+
+            setTimeout(() => {
+                // 跳转到登录页面
+                window.location.href = 'login.html';
+            }, 1000);
+
+            updateStatus('✅ 已跳转到登录页面！', 'success');
+        }
+
+        // 页面加载时显示当前状态
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStatus('页面已加载，点击按钮开始修复', 'success');
+
+            // 检查是否有卡住的会话
+            const now = Date.now();
+            Object.keys(localStorage).forEach(key => {
+                const value = localStorage.getItem(key);
+                if (key.includes('supabase') && value) {
+                    try {
+                        const data = JSON.parse(value);
+                        const expires = new Date(data.expires);
+                        if (expires > now) {
+                            updateStatus('⚠️ 检测到过期的会话，建议先执行清理', 'warning');
+                        }
+                    } catch (e) {
+                        // 忽略解析错误
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

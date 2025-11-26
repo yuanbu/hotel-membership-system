@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>酒店员工管理系统 - 登录</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/auth.css">
+</head>
+<body class="auth-body">
+    <div class="auth-container">
+        <div class="auth-card">
+            <header class="auth-header">
+                <h1>酒店员工管理系统</h1>
+                <p class="auth-subtitle">请登录您的账户</p>
+            </header>
+
+            <!-- 登录表单 -->
+            <div class="auth-form-container" id="login-form">
+                <form class="auth-form" id="login-form-element">
+                    <div class="form-group">
+                        <label for="login-email">邮箱地址</label>
+                        <input type="email" id="login-email" name="email" required
+                               placeholder="请输入您的邮箱">
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">密码</label>
+                        <input type="password" id="login-password" name="password" required
+                               placeholder="请输入密码">
+                        <button type="button" class="password-toggle" onclick="togglePassword('login-password')">
+                            <span class="eye-icon">👁️</span>
+                        </button>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">
+                        登录
+                    </button>
+                </form>
+
+                <div class="auth-footer">
+                    <p>还没有账户？
+                        <button type="button" class="link-button" onclick="showRegisterForm()">
+                            立即注册
+                        </button>
+                    </p>
+                    <button type="button" class="link-button" onclick="showForgotPassword()">
+                        忘记密码？
+                    </button>
+                </div>
+            </div>
+
+            <!-- 注册表单 -->
+            <div class="auth-form-container hidden" id="register-form">
+                <form class="auth-form" id="register-form-element">
+                    <div class="form-group">
+                        <label for="register-name">姓名</label>
+                        <input type="text" id="register-name" name="name" required
+                               placeholder="请输入您的姓名">
+                    </div>
+                    <div class="form-group">
+                        <label for="register-email">邮箱地址</label>
+                        <input type="email" id="register-email" name="email" required
+                               placeholder="请输入您的邮箱">
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password">密码</label>
+                        <input type="password" id="register-password" name="password" required
+                               placeholder="请输入密码（至少6位）" minlength="6">
+                        <button type="button" class="password-toggle" onclick="togglePassword('register-password')">
+                            <span class="eye-icon">👁️</span>
+                        </button>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-confirm-password">确认密码</label>
+                        <input type="password" id="register-confirm-password" name="confirmPassword" required
+                               placeholder="请再次输入密码">
+                        <button type="button" class="password-toggle" onclick="togglePassword('register-confirm-password')">
+                            <span class="eye-icon">👁️</span>
+                        </button>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="agree-terms" required>
+                            <span class="checkmark"></span>
+                            我同意 <a href="#" onclick="showTerms()">服务条款</a> 和 <a href="#" onclick="showPrivacy()">隐私政策</a>
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">
+                        注册账户
+                    </button>
+                </form>
+
+                <div class="auth-footer">
+                    <p>已有账户？
+                        <button type="button" class="link-button" onclick="showLoginForm()">
+                            立即登录
+                        </button>
+                    </p>
+                </div>
+            </div>
+
+            <!-- 忘记密码表单 -->
+            <div class="auth-form-container hidden" id="forgot-password-form">
+                <form class="auth-form" id="forgot-form-element">
+                    <div class="form-group">
+                        <label for="forgot-email">邮箱地址</label>
+                        <input type="email" id="forgot-email" name="email" required
+                               placeholder="请输入您的邮箱">
+                    </div>
+                    <p class="form-help">我们将向您的邮箱发送密码重置链接</p>
+                    <button type="submit" class="btn btn-primary btn-full">
+                        发送重置链接
+                    </button>
+                </form>
+
+                <div class="auth-footer">
+                    <button type="button" class="link-button" onclick="showLoginForm()">
+                        返回登录
+                    </button>
+                </div>
+            </div>
+
+            <!-- 邮箱验证提示 -->
+            <div class="auth-form-container hidden" id="verification-form">
+                <div class="verification-message">
+                    <div class="verification-icon">📧</div>
+                    <h2>验证邮箱</h2>
+                    <p>我们已向您的邮箱发送了验证链接</p>
+                    <p>请检查邮箱并点击链接完成验证</p>
+                    <div class="verification-actions">
+                        <button type="button" class="btn btn-secondary" onclick="resendVerification()">
+                            重新发送验证邮件
+                        </button>
+                        <button type="button" class="btn btn-link" onclick="showLoginForm()">
+                            返回登录
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 消息提示 -->
+    <div id="message" class="message"></div>
+
+    <!-- 加载提示 -->
+    <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+        <p>处理中...</p>
+    </div>
+
+    <!-- 服务条款和隐私政策模态框 -->
+    <div id="modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">标题</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                内容
+            </div>
+        </div>
+    </div>
+
+    <!-- Supabase JavaScript SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- 认证JavaScript -->
+    <script src="js/auth.js"></script>
+</body>
+</html>

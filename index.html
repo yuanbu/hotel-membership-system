@@ -9,7 +9,16 @@
 <body>
     <div class="container">
         <header class="header">
-            <h1>酒店员工管理系统</h1>
+            <div class="header-content">
+                <h1>酒店员工管理系统</h1>
+                <div class="user-info">
+                    <div class="user-details">
+                        <span class="user-name" id="current-user-name">用户</span>
+                        <span class="user-email" id="current-user-email">email@example.com</span>
+                    </div>
+                    <button id="logout-btn" class="btn btn-secondary btn-sm">退出登录</button>
+                </div>
+            </div>
         </header>
 
         <main class="main-content">
@@ -84,9 +93,12 @@
 
             <!-- 员工列表区域 -->
             <section class="member-list">
-                <h2>员工列表</h2>
-                <div class="list-controls">
-                    <button id="refresh-list" class="btn btn-secondary">刷新列表</button>
+                <div class="list-header">
+                    <h2>员工列表</h2>
+                    <div class="list-controls">
+                        <button id="refresh-list" class="btn btn-secondary">刷新列表</button>
+                        <div id="active-users" class="active-users-container"></div>
+                    </div>
                 </div>
                 <div id="members-list" class="members-table-container">
                     <table class="members-table">
@@ -96,6 +108,9 @@
                                 <th>姓名</th>
                                 <th>薪资</th>
                                 <th>创建时间</th>
+                                <th>创建者</th>
+                                <th>更新时间</th>
+                                <th>更新者</th>
                             </tr>
                         </thead>
                         <tbody id="members-tbody">

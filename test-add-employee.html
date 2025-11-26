@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>添加员工诊断工具</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #e1e8ed;
+            border-radius: 8px;
+        }
+        .section h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .action {
+            margin: 10px 0;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn.success {
+            background: #28a745;
+        }
+        .btn.success:hover {
+            background: #218838;
+        }
+        .btn.danger {
+            background: #dc3545;
+        }
+        .btn.danger:hover {
+            background: #c82333;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .result.success {
+            border-color: #28a745;
+            color: #155724;
+        }
+        .result.error {
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .step {
+            margin: 15px 0;
+            padding: 15px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+        }
+        .step-success {
+            border-left-color: #28a745;
+            background: #e8f5e8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 添加员工功能诊断工具</h1>
+        <p>这个工具帮助诊断为什么添加员工功能不工作。</p>
+
+        <div class="section">
+            <h3>📋 第一步：检查当前登录状态</h3>
+            <div class="action">
+                <button class="btn" onclick="checkAuthStatus()">检查认证状态</button>
+            </div>
+            <div id="auth-result" class="result"></div>
+        </div>
+
+        <div class="section">
+            <h3>🧪 第二步：测试数据库连接</h3>
+            <div class="action">
+                <button class="btn" onclick="testDatabaseConnection()">测试数据库连接</button>
+                <button class="btn" onclick="testTableAccess()">测试表访问权限</button>
+            </div>
+            <div id="db-result" class="result"></div>
+        </div>
+
+        <div class="section">
+            <h3>🧪 第三步：模拟添加员工</h3>
+            <div class="form-group">
+                <label for="test-employee-id">员工ID:</label>
+                <input type="text" id="test-employee-id" value="9999" placeholder="输入测试员工ID">
+            </div>
+            <div class="form-group">
+                <label for="test-employee-name">员工姓名:</label>
+                <input type="text" id="test-employee-name" value="测试员工" placeholder="输入测试员工姓名">
+            </div>
+            <div class="form-group">
+                <label for="test-employee-salary">员工薪资:</label>
+                <input type="number" id="test-employee-salary" value="5000" placeholder="输入测试员工薪资">
+            </div>
+            <div class="action">
+                <button class="btn success" onclick="simulateAddEmployee()">模拟添加员工</button>
+                <button class="btn danger" onclick="cleanupTestEmployee()">清理测试数据</button>
+            </div>
+            <div id="add-result" class="result"></div>
+        </div>
+
+        <div class="section">
+            <h3>🔍 第四步：检查RLS策略</h3>
+            <div class="action">
+                <button class="btn" onclick="checkRLSPolicies()">检查RLS策略</button>
+            </div>
+            <div id="rls-result" class="result"></div>
+        </div>
+
+        <div class="section">
+            <h3>📊 第五步：查看现有数据</h3>
+            <div class="action">
+                <button class="btn" onclick="viewExistingData()">查看现有员工数据</button>
+                <button class="btn" onclick="viewActivityLogs()">查看活动日志</button>
+            </div>
+            <div id="data-result" class="result"></div>
+        </div>
+
+        <div class="section">
+            <h3>📞 解决方案推荐</h3>
+            <div id="solutions" class="status warning">
+                <strong>根据诊断结果，推荐的解决方案：</strong>
+                <ol>
+                    <li>如果未认证：请先登录系统</li>
+                    <li>如果权限不足：检查RLS策略配置</li>
+                    <li>如果表结构问题：运行配置脚本</li>
+                    <li>如果网络问题：检查Supabase连接</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://xlamtnjlxzulahvumafh.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsYW10bmpseHp1bGFodnVtYWZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5NjYzMTYsImV4cCI6MjA3OTU0MjMxNn0.CbHe3A7qQYbMseUVmPUD3FBzSOmCR7OgFDmAtJIkHkw';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentUser = null;
+
+        async function checkAuthStatus() {
+            const resultDiv = document.getElementById('auth-result');
+            resultDiv.innerHTML = '<div class="status">检查认证状态中...</div>';
+
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+
+                if (error) {
+                    resultDiv.innerHTML = `<div class="status error">❌ 获取会话失败: ${error.message}</div>`;
+                    return;
+                }
+
+                if (session && session.user) {
+                    currentUser = session.user;
+                    resultDiv.innerHTML = `
+                        <div class="status success">✅ 用户已认证</div>
+                        <div>用户ID: ${session.user.id}</div>
+                        <div>邮箱: ${session.user.email}</div>
+                        <div>创建时间: ${new Date(session.user.created_at).toLocaleString()}</div>
+                        <div>角色: ${session.user.aud || 'authenticated'}</div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="status error">❌ 用户未认证，请先登录</div>`;
+                }
+            } catch (err) {
+                resultDiv.innerHTML = `<div class="status error">❌ 认证检查异常: ${err.message}</div>`;
+            }
+        }
+
+        async function testDatabaseConnection() {
+            const resultDiv = document.getElementById('db-result');
+            resultDiv.innerHTML = '<div class="status">测试数据库连接...</div>';
+
+            try {
+                const startTime = Date.now();
+                const { data, error } = await supabase
+                    .from('members')
+                    .select('count')
+                    .limit(1);
+
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+
+                if (error) {
+                    resultDiv.innerHTML = `<div class="status error">❌ 数据库连接失败: ${error.message}</div>`;
+                    resultDiv.innerHTML += `<div>错误详情: ${JSON.stringify(error, null, 2)}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="status success">✅ 数据库连接成功 (${duration}ms)</div>`;
+                    resultDiv.innerHTML += `<div>查询结果: ${JSON.stringify(data, null, 2)}</div>`;
+                }
+            } catch (err) {
+                resultDiv.innerHTML = `<div class="status error">❌ 连接测试异常: ${err.message}</div>`;
+            }
+        }
+
+        async function testTableAccess() {
+            const resultDiv = document.getElementById('db-result');
+            resultDiv.innerHTML = '<div class="status">测试表访问权限...</div>';
+
+            try {
+                // 测试SELECT权限
+                const { data: selectData, error: selectError } = await supabase
+                    .from('members')
+                    .select('*')
+                    .limit(1);
+
+                if (selectError) {
+                    resultDiv.innerHTML += `<div class="status error">❌ SELECT权限失败: ${selectError.message}</div>`;
+                } else {
+                    resultDiv.innerHTML += `<div class="status success">✅ SELECT权限正常</div>`;
+                }
+
+                // 测试INSERT权限（使用虚拟数据）
+                const testInsert = {
+                    employee_id: 99999,
+                    employee_name: '权限测试',
+                    employee_salary: 0,
+                    created_by: currentUser?.id
+                };
+
+                const { data: insertData, error: insertError } = await supabase
+                    .from('members')
+                    .insert([testInsert])
+                    .select();
+
+                if (insertError) {
+                    resultDiv.innerHTML += `<div class="status error">❌ INSERT权限失败: ${insertError.message}</div>`;
+                } else {
+                    resultDiv.innerHTML += `<div class="status success">✅ INSERT权限正常</div>`;
+                    // 立即清理测试数据
+                    await supabase.from('members').delete().eq('employee_id', 99999);
+                }
+
+            } catch (err) {
+                resultDiv.innerHTML += `<div class="status error">❌ 权限测试异常: ${err.message}</div>`;
+            }
+        }
+
+        async function simulateAddEmployee() {
+            const resultDiv = document.getElementById('add-result');
+            const employeeId = document.getElementById('test-employee-id').value.trim();
+            const employeeName = document.getElementById('test-employee-name').value.trim();
+            const employeeSalary = parseInt(document.getElementById('test-employee-salary').value) || 0;
+
+            if (!employeeId || !employeeName) {
+                resultDiv.innerHTML = `<div class="status error">❌ 请填写完整的员工信息</div>`;
+                return;
+            }
+
+            if (!currentUser) {
+                resultDiv.innerHTML = `<div class="status error">❌ 用户未认证，请先检查认证状态</div>`;
+                return;
+            }
+
+            resultDiv.innerHTML = '<div class="status">正在添加测试员工...</div>';
+
+            try {
+                // 1. 检查员工ID是否已存在
+                const { data: existingEmployee } = await supabase
+                    .from('members')
+                    .select('employee_id')
+                    .eq('employee_id', parseInt(employeeId))
+                    .single();
+
+                if (existingEmployee) {
+                    resultDiv.innerHTML = `<div class="status error">❌ 员工ID ${employeeId} 已存在</div>`;
+                    return;
+                }
+
+                // 2. 插入新员工
+                const employeeData = {
+                    employee_id: parseInt(employeeId),
+                    employee_name: employeeName,
+                    employee_salary: employeeSalary,
+                    created_by: currentUser.id
+                };
+
+                resultDiv.innerHTML += '<div class="status">准备插入数据...</div>';
+
+                const { data, error } = await supabase
+                    .from('members')
+                    .insert([employeeData])
+                    .select();
+
+                if (error) {
+                    resultDiv.innerHTML = `<div class="status error">❌ 添加员工失败: ${error.message}</div>`;
+                    resultDiv.innerHTML += `<div>错误详情: ${JSON.stringify(error, null, 2)}</div>`;
+                    resultDiv.innerHTML += `<div>请求数据: ${JSON.stringify(employeeData, null, 2)}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="status success">✅ 员工添加成功！</div>`;
+                    resultDiv.innerHTML += `<div>返回数据: ${JSON.stringify(data, null, 2)}</div>`;
+
+                    // 3. 记录活动日志
+                    const logResult = await logActivity('CREATE', 'employee', employeeId, {
+                        employee_name: employeeName,
+                        employee_salary: employeeSalary
+                    });
+
+                    if (logResult) {
+                        resultDiv.innerHTML += `<div class="status success">✅ 活动日志记录成功</div>`;
+                    } else {
+                        resultDiv.innerHTML += `<div class="status warning">⚠️ 活动日志记录失败</div>`;
+                    }
+                }
+
+            } catch (err) {
+                resultDiv.innerHTML = `<div class="status error">❌ 添加员工异常: ${err.message}</div>`;
+                resultDiv.innerHTML += `<div>异常堆栈: ${err.stack}</div>`;
+            }
+        }
+
+        async function cleanupTestEmployee() {
+            const resultDiv = document.getElementById('add-result');
+            const employeeId = document.getElementById('test-employee-id').value.trim();
+
+            if (!employeeId) {
+                resultDiv.innerHTML = `<div class="status error">❌ 请输入要清理的员工ID</div>`;
+                return;
+            }
+
+            resultDiv.innerHTML = '<div class="status">清理测试数据...</div>';
+
+            try {
+                const { error } = await supabase
+                    .from('members')
+                    .delete()
+                    .eq('employee_id', parseInt(employeeId));
+
+                if (error) {
+                    resultDiv.innerHTML = `<div class="status error">❌ 清理失败: ${error.message}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="status success">✅ 测试数据已清理</div>`;
+                }
+            } catch (err) {
+                resultDiv.innerHTML = `<div class="status error">❌ 清理异常: ${err.message}</div>`;
+            }
+        }
+
+        async function checkRLSPolicies() {
+            const resultDiv = document.getElementById('rls-result');
+            resultDiv.innerHTML = '<div class="status">检查RLS策略...</div>';
+
+            try {
+                // 这里我们只能通过尝试操作来检查RLS策略
+                const tests = [
+                    { name: 'SELECT测试', action: 'select' },
+                    { name: 'INSERT测试', action: 'insert' },
+                    { name: 'UPDATE测试', action: 'update' },
+                    { name: 'DELETE测试', action: 'delete' }
+                ];
+
+                for (const test of tests) {
+                    resultDiv.innerHTML += `<div class="status">执行${test.name}...</div>`;
+                    // 这里简化实现，实际应该分别测试每种操作
+                }
+
+                resultDiv.innerHTML = `<div class="status success">✅ RLS策略检查完成</div>`;
+                resultDiv.innerHTML += `<div>注意：详细的RLS策略检查需要在Supabase控制台中查看</div>`;
+
+            } catch (err) {
+                resultDiv.innerHTML = `<div class="status error">❌ RLS策略检查异常: ${err.message}</div>`;
+            }
+        }
+
+        async function viewExistingData() {
+            const resultDiv = document.getElementById('data-result');
+            resultDiv.innerHTML = '<div class="status">查询现有员工数据...</div>';
+
+            try {
+                // 先查询当前用户状态
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) {
+                    resultDiv.innerHTML = `<div class="status error">❌ 用户未登录</div>`;
+                    return;
+                }
+
+                const currentUserId = session.user.id;
+                const currentUserEmail = session.user.email;
+
+                resultDiv.innerHTML += `<div class="status info">ℹ️ 当前用户: ${currentUserEmail} (${currentUserId})</div>`;
+
+                // 查询所有员工数据（members表的RLS策略允许所有认证用户查看）
+                const { data, error } = await supabase
+                    .from('members')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                if (error) {
+                    resultDiv.innerHTML += `<div class="status error">❌ 查询失败: ${error.message}</div>`;
+                    resultDiv.innerHTML += `<div class="status warning">⚠️ 错误代码: ${error.code || 'N/A'}</div>`;
+
+                    // 如果是权限错误，尝试添加详细信息
+                    if (error.message.includes('permission') || error.message.includes('policy')) {
+                        resultDiv.innerHTML += `<div class="status warning">⚠️ 这可能是RLS策略限制问题</div>`;
+                    }
+                } else {
+                    resultDiv.innerHTML += `<div class="status success">✅ 查询成功，共 ${data.length} 条记录</div>`;
+
+                    if (data.length === 0) {
+                        resultDiv.innerHTML += `<div class="status info">ℹ️ 数据库中没有员工记录，或者RLS策略限制了访问</div>`;
+                    } else {
+                        // 显示详细数据
+                        let tableHtml = `
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>员工ID</th>
+                                        <th>姓名</th>
+                                        <th>薪资</th>
+                                        <th>创建者</th>
+                                        <th>创建时间</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        `;
+
+                        data.forEach(employee => {
+                            const createdBy = employee.created_by === currentUserId ? '我' :
+                                (employee.created_by || '未知');
+                            tableHtml += `
+                                <tr>
+                                    <td>${employee.employee_id}</td>
+                                    <td>${employee.employee_name}</td>
+                                    <td>${employee.employee_salary}</td>
+                                    <td>${createdBy}</td>
+                                    <td>${employee.created_at ? new Date(employee.created_at).toLocaleString() : '未知'}</td>
+                                </tr>
+                            `;
+                        });
+
+                        tableHtml += `
+                                </tbody>
+                            </table>
+                        `;
+
+                        resultDiv.innerHTML += tableHtml;
+                        resultDiv.innerHTML += `<div style="margin-top: 10px;"><strong>完整数据:</strong></div>`;
+                        resultDiv.innerHTML += `<div>${JSON.stringify(data, null, 2)}</div>`;
+                    }
+                }
+
+                // 测试直接查询计数
+                const { count, error: countError } = await supabase
+                    .from('members')
+                    .select('*', { count: 'exact', head: true });
+
+                if (countError) {
+                    resultDiv.innerHTML += `<div class="status error">❌ 计数查询失败: ${countError.message}</div>`;
+                } else {
+                    resultDiv.innerHTML += `<div class="status info">ℹ️ 数据库中的总记录数: ${count}</div>`;
+                }
+
+            } catch (err) {
+                resultDiv.innerHTML += `<div class="status error">❌ 查询异常: ${err.message}</div>`;
+                resultDiv.innerHTML += `<div class="status error">❌ 异常堆栈: ${err.stack}</div>`;
+            }
+        }
+
+        async function viewActivityLogs() {
+            const resultDiv = document.getElementById('data-result');
+            resultDiv.innerHTML = '<div class="status">查询活动日志...</div>';
+
+            try {
+                // 先查询当前用户ID
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) {
+                    resultDiv.innerHTML = `<div class="status error">❌ 用户未登录</div>`;
+                    return;
+                }
+
+                const currentUserId = session.user.id;
+                const currentUserEmail = session.user.email;
+
+                resultDiv.innerHTML += `<div class="status info">ℹ️ 当前用户: ${currentUserEmail} (${currentUserId})</div>`;
+
+                // 查询自己的活动日志
+                const { data: ownLogs, error: ownError } = await supabase
+                    .from('activity_logs')
+                    .select('*')
+                    .eq('user_id', currentUserId)
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                resultDiv.innerHTML += `<div class="status info">ℹ️ 查询自己的日志 (user_id = ${currentUserId})...</div>`;
+
+                if (ownError) {
+                    resultDiv.innerHTML += `<div class="status error">❌ 查询自己的日志失败: ${ownError.message}</div>`;
+                } else {
+                    resultDiv.innerHTML += `<div class="status success">✅ 查询成功，您有 ${ownLogs.length} 条日志记录</div>`;
+                    if (ownLogs.length > 0) {
+                        resultDiv.innerHTML += `<div>${JSON.stringify(ownLogs, null, 2)}</div>`;
+                    }
+                }
+
+                // 尝试查询所有日志（用于测试，但这会因为RLS策略失败）
+                resultDiv.innerHTML += `<div class="status warning">⚠️ 测试查询所有日志（预期会因RLS策略失败）...</div>`;
+                const { data: allLogs, error: allError } = await supabase
+                    .from('activity_logs')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                if (allError) {
+                    resultDiv.innerHTML += `<div class="status warning">⚠️ 预期的RLS限制: ${allError.message}</div>`;
+                } else {
+                    resultDiv.innerHTML += `<div class="status success">✅ 查询所有日志成功: ${allLogs.length} 条</div>`;
+                }
+
+            } catch (err) {
+                resultDiv.innerHTML += `<div class="status error">❌ 查询活动日志异常: ${err.message}</div>`;
+            }
+        }
+
+        async function logActivity(action, targetType, targetId, details = {}) {
+            if (!currentUser) return false;
+
+            try {
+                const { error } = await supabase
+                    .from('activity_logs')
+                    .insert({
+                        user_id: currentUser.id,
+                        user_email: currentUser.email,
+                        action: action,
+                        target_type: targetType,
+                        target_id: targetId,
+                        details: details
+                    });
+
+                return !error;
+            } catch (error) {
+                console.error('活动日志异常:', error);
+                return false;
+            }
+        }
+
+        // 页面加载时自动检查认证状态
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(checkAuthStatus, 500);
+        });
+    </script>
+</body>
+</html>

@@ -5,6 +5,9 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // 初始化 Supabase 客户端
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// 全局变量
+let currentLoginEmail = '';
+
 // DOM 元素
 const loading = document.getElementById('loading');
 const message = document.getElementById('message');
@@ -13,6 +16,15 @@ const message = document.getElementById('message');
 document.addEventListener('DOMContentLoaded', function() {
     // 检查用户是否已登录
     checkUserSession();
+
+    // 初始化登录表单验证码
+    generateCaptcha('login-captcha-display', 'login-captcha-answer');
+
+    // 初始化注册表单验证码
+    generateCaptcha('register-captcha-display', 'register-captcha-answer');
+
+    // 初始化验证码输入框
+    initCodeInputs();
 
     // 绑定表单事件
     document.getElementById('login-form-element').addEventListener('submit', handleLogin);
@@ -47,6 +59,64 @@ async function checkUserSession() {
     }
 }
 
+// 生成随机验证码
+function generateCaptcha(displayId, answerId) {
+    const captcha = Math.floor(1000 + Math.random() * 9000).toString();
+    const displayElement = document.getElementById(displayId);
+    const answerElement = document.getElementById(answerId);
+
+    if (displayElement) {
+        displayElement.textContent = captcha;
+        displayElement.style.transform = `rotate(${Math.random() * 10 - 5}deg)`;
+    }
+
+    if (answerElement) {
+        answerElement.value = captcha;
+    }
+}
+
+// 初始化验证码输入框
+function initCodeInputs() {
+    const codeInputContainers = document.querySelectorAll('.code-inputs');
+
+    codeInputContainers.forEach(container => {
+        const codeInputs = container.querySelectorAll('.code-input');
+        const parentForm = container.closest('form');
+        const submitBtn = parentForm.querySelector('button[type="submit"]');
+
+        codeInputs.forEach((input, index) => {
+            input.addEventListener('input', function(e) {
+                const value = e.target.value;
+
+                if (value.length === 1) {
+                    // 自动跳到下一个输入框
+                    if (index < codeInputs.length - 1) {
+                        codeInputs[index + 1].focus();
+                    }
+                }
+
+                // 验证当前表单的输入框是否都已填写
+                const allFilled = Array.from(codeInputs).every(input => input.value.length === 1);
+                if (submitBtn) {
+                    submitBtn.disabled = !allFilled;
+                }
+            });
+
+            input.addEventListener('keydown', function(e) {
+                // 处理退格键
+                if (e.key === 'Backspace' && e.target.value === '' && index > 0) {
+                    codeInputs[index - 1].focus();
+                }
+            });
+
+            // 只允许输入数字
+            input.addEventListener('input', function(e) {
+                e.target.value = e.target.value.replace(/[^0-9]/g, '');
+            });
+        });
+    });
+}
+
 // 处理登录
 async function handleLogin(event) {
     event.preventDefault();
@@ -54,6 +124,21 @@ async function handleLogin(event) {
     const formData = new FormData(event.target);
     const email = formData.get('email').trim();
     const password = formData.get('password');
+
+    // 获取用户输入的验证码
+    const userCaptcha = Array.from(document.querySelectorAll('#login-form .code-input'))
+        .map(input => input.value)
+        .join('');
+
+    // 验证人机验证码
+    const correctCaptcha = document.getElementById('login-captcha-answer').value;
+
+    if (userCaptcha !== correctCaptcha) {
+        showMessage('验证码错误，请重新输入', 'error');
+        generateCaptcha('login-captcha-display', 'login-captcha-answer');
+        clearCodeInputs('login-form');
+        return;
+    }
 
     if (!email || !password) {
         showMessage('请填写完整的登录信息', 'error');
@@ -97,6 +182,20 @@ async function handleLogin(event) {
         showMessage(errorMessage, 'error');
     } finally {
         hideLoading();
+    }
+}
+
+// 清除验证码输入
+function clearCodeInputs(formId) {
+    const codeInputs = document.querySelectorAll(`#${formId} .code-input`);
+    const parentForm = document.querySelector(`#${formId}`);
+    const submitBtn = parentForm.querySelector('button[type="submit"]');
+
+    codeInputs.forEach(input => input.value = '');
+
+    // 重置按钮状态
+    if (submitBtn) {
+        submitBtn.disabled = true;
     }
 }
 

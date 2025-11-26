@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>酒店员工管理系统 - 登录/注册</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/auth.css">
+    <style>
+        .captcha-container {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .captcha-display {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+            background: #e3f2fd;
+            padding: 10px;
+            border-radius: 5px;
+            letter-spacing: 5px;
+            margin: 10px 0;
+        }
+
+        .verification-code {
+            font-size: 20px;
+            letter-spacing: 3px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .code-inputs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .code-input {
+            width: 50px;
+            height: 50px;
+            font-size: 18px;
+            text-align: center;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .code-input:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+        }
+
+        .resend-code {
+            background: none;
+            border: none;
+            color: #007bff;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: underline;
+            padding: 0;
+            margin-top: 10px;
+        }
+
+        .resend-code:disabled {
+            color: #6c757d;
+            text-decoration: none;
+            cursor: not-allowed;
+        }
+
+        .timer {
+            font-size: 14px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .step {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #dee2e6;
+            color: #6c757d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            margin: 0 10px;
+        }
+
+        .step.active {
+            background: #007bff;
+            color: white;
+        }
+
+        .step.completed {
+            background: #28a745;
+            color: white;
+        }
+    </style>
+</head>
+<body class="auth-body">
+    <div class="auth-container">
+        <div class="auth-card">
+            <header class="auth-header">
+                <h1>酒店员工管理系统</h1>
+                <p class="auth-subtitle">安全认证登录</p>
+            </header>
+
+            <!-- 步骤指示器 -->
+            <div class="step-indicator">
+                <div class="step active" id="step1">1</div>
+                <div class="step" id="step2">2</div>
+                <div class="step" id="step3">3</div>
+            </div>
+
+            <!-- 第一步：输入邮箱 -->
+            <div class="auth-form-container" id="email-step">
+                <form class="auth-form" id="email-form-element">
+                    <div class="form-group">
+                        <label for="email-input">邮箱地址</label>
+                        <input type="email" id="email-input" name="email" required
+                               placeholder="请输入您的邮箱">
+                    </div>
+
+                    <!-- 人机验证 -->
+                    <div class="captcha-container">
+                        <div class="captcha-display" id="captcha-display">2548</div>
+                        <p style="margin: 5px 0; font-size: 14px;">请输入上方的4位数字验证码</p>
+                        <div class="code-inputs">
+                            <input type="text" class="code-input" maxlength="1" required data-index="0">
+                            <input type="text" class="code-input" maxlength="1" required data-index="1">
+                            <input type="text" class="code-input" maxlength="1" required data-index="2">
+                            <input type="text" class="code-input" maxlength="1" required data-index="3">
+                        </div>
+                        <input type="hidden" id="captcha-answer" value="2548">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full" id="send-verification-btn">
+                        发送验证码
+                    </button>
+                </form>
+
+                <div class="auth-footer">
+                    <p>已有账户？
+                        <button type="button" class="link-button" onclick="showLoginStep()">
+                            直接登录
+                        </button>
+                    </p>
+                </div>
+            </div>
+
+            <!-- 第二步：邮件验证码验证 -->
+            <div class="auth-form-container hidden" id="verification-step">
+                <form class="auth-form" id="verification-form-element">
+                    <div class="form-group">
+                        <label>验证码已发送至</label>
+                        <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 10px 0; font-weight: bold;" id="email-display"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>请输入邮件中的6位数注册验证码</label>
+                        <input type="text" id="email-verification-code" name="email-verification-code" class="verification-code"
+                               placeholder="请输入6位数验证码" maxlength="6" required>
+                    </div>
+
+                    <div style="text-align: center;">
+                        <button type="button" class="resend-code" id="resend-btn" onclick="resendVerificationCode()">
+                            重新发送验证码
+                        </button>
+                        <div class="timer" id="timer" style="display: none;">60秒后可重新发送</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full">
+                        验证邮箱
+                    </button>
+                </form>
+
+                <div class="auth-footer">
+                    <button type="button" class="link-button" onclick="goBackToEmail()">
+                        ← 返回上一步
+                    </button>
+                </div>
+            </div>
+
+            <!-- 第三步：设置密码 -->
+            <div class="auth-form-container hidden" id="password-step">
+                <form class="auth-form" id="password-form-element">
+                    <div class="form-group">
+                        <label for="user-name">姓名</label>
+                        <input type="text" id="user-name" name="name" required
+                               placeholder="请输入您的姓名">
+                    </div>
+                    <div class="form-group">
+                        <label for="user-password">设置密码</label>
+                        <input type="password" id="user-password" name="password" required
+                               placeholder="请输入密码（至少6位）" minlength="6">
+                        <button type="button" class="password-toggle" onclick="togglePassword('user-password')">
+                            <span class="eye-icon">👁️</span>
+                        </button>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm-password">确认密码</label>
+                        <input type="password" id="confirm-password" name="confirmPassword" required
+                               placeholder="请再次输入密码">
+                        <button type="button" class="password-toggle" onclick="togglePassword('confirm-password')">
+                            <span class="eye-icon">👁️</span>
+                        </button>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="agree-terms" required>
+                            <span class="checkmark"></span>
+                            我同意 <a href="#" onclick="showTerms()">服务条款</a> 和 <a href="#" onclick="showPrivacy()">隐私政策</a>
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full" id="complete-registration">
+                        完成注册
+                    </button>
+                </form>
+
+                <div class="auth-footer">
+                    <button type="button" class="link-button" onclick="goBackToVerification()">
+                        ← 返回上一步
+                    </button>
+                </div>
+            </div>
+
+            <!-- 直接登录表单 -->
+            <div class="auth-form-container hidden" id="login-step">
+                <form class="auth-form" id="login-form-element">
+                    <div class="form-group">
+                        <label for="login-email">邮箱地址</label>
+                        <input type="email" id="login-email" name="email" required
+                               placeholder="请输入您的邮箱">
+                    </div>
+
+                    <!-- 人机验证 -->
+                    <div class="captcha-container">
+                        <div class="captcha-display" id="login-captcha-display">1827</div>
+                        <p style="margin: 5px 0; font-size: 14px;">请输入上方的4位数字验证码</p>
+                        <div class="code-inputs">
+                            <input type="text" class="code-input" maxlength="1" required data-index="0">
+                            <input type="text" class="code-input" maxlength="1" required data-index="1">
+                            <input type="text" class="code-input" maxlength="1" required data-index="2">
+                            <input type="text" class="code-input" maxlength="1" required data-index="3">
+                        </div>
+                        <input type="hidden" id="login-captcha-answer" value="1827">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="login-password">密码</label>
+                        <input type="password" id="login-password" name="password" required
+                               placeholder="请输入密码">
+                        <button type="button" class="password-toggle" onclick="togglePassword('login-password')">
+                            <span class="eye-icon">👁️</span>
+                        </button>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">
+                        登录
+                    </button>
+                </form>
+
+                <div class="auth-footer">
+                    <p>还没有账户？
+                        <button type="button" class="link-button" onclick="showRegistrationFlow()">
+                            立即注册
+                        </button>
+                    </p>
+                    <button type="button" class="link-button" onclick="showForgotPassword()">
+                        忘记密码？
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 消息提示 -->
+    <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+        <div class="loading-text">处理中...</div>
+    </div>
+
+    <div id="message" class="message"></div>
+
+    <!-- 模态框 -->
+    <div id="modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Supabase 客户端 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- 邮件服务选择 -->
+    <div id="email-service-selector" style="position: fixed; top: 10px; right: 10px; background: white; border: 1px solid #dee2e6; padding: 10px; border-radius: 5px; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <select id="email-service-select" onchange="switchEmailService()" style="margin-bottom: 5px; padding: 5px; border: 1px solid #dee2e6; border-radius: 3px; width: 200px;">
+            <option value="console">控制台模式（仅开发）</option>
+            <option value="freeapi">免费API（模拟）</option>
+            <option value="supabase" selected>Supabase邮件（推荐）</option>
+            <option value="emailjs">EmailJS（需配置）</option>
+        </select>
+        <button onclick="showEmailServiceInfo()" style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px;">配置说明</button>
+    </div>
+
+    <script src="js/email-service-supabase.js"></script>
+    <script id="email-service-script"></script>
+    <script src="js/auth-new.js"></script>
+</body>
+</html>
